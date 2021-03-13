@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as numpy
+import os
 
 from sklearn.preprocessing import MultiLabelBinarizer
 
@@ -41,7 +42,7 @@ def get_tweets_by(df, unit_of_time):
         per_week_day['count'] = per_week_day['count'].astype('int')
         return per_week_day
     elif unit_of_time == 'week':
-        per_week = pd.to_datetime(df['date']).dt.week.value_counts().sort_index().reset_index()
+        per_week = pd.to_datetime(df['date']).dt.isocalendar().week.value_counts().sort_index().reset_index()
         per_week.columns = ['WEEK', 'count']
         return per_week
     elif unit_of_time == 'month':
@@ -81,7 +82,9 @@ def average_tweets_by(df, unit_of_time):
     
 
 # Import that dataframe from the get_day.py output
-df = pd.read_pickle('tweets_df.pkl')
+path = os.getcwd()
+file_path = os.path.join(path, 'tweets_df.pkl')
+df = pd.read_pickle(file_path)
 
 # Constants
 DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -95,9 +98,12 @@ TOTAL_RETWEETS = df['nretweets'].sum()
 # Regex variables
 twitter_handle_regex = r'@([a-zA-Z0-9_]+)'
 
-# Fix the date column to US/Eastern Time Zone
+# Fix the date column to US/Eastern Time Zone and add date variables
 df['date'] = pd.to_datetime(df['date'], utc=True)
 df['date'] = pd.to_datetime(df['date']).dt.tz_convert('US/Eastern')
+df['week'] = df['date'].dt.isocalendar().week
+df['month'] = df['date'].dt.month
+df['year'] = df['date'].dt.year
 
 # Create a mentions column similar to the hashtags column
 df['mentions'] = df['tweet'].str.findall(twitter_handle_regex).apply(','.join)
@@ -115,34 +121,24 @@ tweets_per_week = get_tweets_by(df, 'week')
 tweets_per_month = get_tweets_by(df, 'month')
 tweets_per_year = get_tweets_by(df, 'year')
 
+# //FIXME fix the data statstics
 # Database statistics
-AVG_TWEETS_PER_DAY = tweets_per_day['count'].mean()
-AVG_TWEETS_PER_HOUR = tweets_per_hour['count'].mean()
-AVG_TWEETS_PER_WEEK = tweets_per_week['count'].mean()
-AVG_TWEETS_PER_MONTH = tweets_per_month['count'].mean()
-AVG_TWEETS_PER_YEAR = tweets_per_year['count'].mean()
-
+# AVG_TWEETS_PER_DAY = tweets_per_day['count'].mean()
+# AVG_TWEETS_PER_HOUR = tweets_per_hour['count'].mean()
+# AVG_TWEETS_PER_WEEK = tweets_per_week['count'].mean()
+# AVG_TWEETS_PER_MONTH = tweets_per_month['count'].mean()
+# AVG_TWEETS_PER_YEAR = tweets_per_year['count'].mean()
 # print('Number of tweets', NUM_OF_TWEETS)
 # print(AVG_TWEETS_PER_DAY, AVG_TWEETS_PER_HOUR, AVG_TWEETS_PER_WEEK, AVG_TWEETS_PER_MONTH, AVG_TWEETS_PER_YEAR)
 
-# print(df.head(10))
-# print(df.columns)
+
+
+
 
 # test_df = df.copy()
-# test_df['week/year'] = test_df['date'].apply(lambda x: "%d/%d" % (x.week, x.year))
-# print(test_df.groupby('week/year').size().mean())
-
-# avg_day = tweets_per_day
-
-print(tweets_per_day['count'].mean(axis=0))
-
-week_avg = 0
-print(df['date'].dt.week)
-
-test_df = df.copy()
-test_df['count'] = 1
-test_df['month'] = df['date'].dt.month
-print(test_df.groupby(['month']).mean())
-print(test_df.groupby(['month']).sum().iloc[:, 5])
+# test_df['count'] = 1
+# test_df['month'] = df['date'].dt.month
+# print(test_df.groupby(['month']).mean())
+# print(test_df.groupby(['month']).sum().iloc[:, 5])
 
 
