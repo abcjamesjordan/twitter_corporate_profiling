@@ -6,7 +6,6 @@ from sklearn.preprocessing import MultiLabelBinarizer
 def tweets_scrape(username, pandas_bool=True, hide_output_bool=True, retweets_bool=True, filter_retweets_bool=False):
     c = twint.Config()
     c.Username = username
-    c.Limit = 2000
     c.Pandas = pandas_bool
     c.Hide_output = hide_output_bool
     c.Retweets = retweets_bool
@@ -68,6 +67,7 @@ tweets_mention_3 = tweets_scrape(top_3_mentions[2])
 tweets_mention_1.to_pickle('./tweets_mention1_df.pkl')
 tweets_mention_2.to_pickle('./tweets_mention2_df.pkl')
 tweets_mention_3.to_pickle('./tweets_mention3_df.pkl')
+
 with open('top_3_mentions.txt', 'w') as f:
     for item in top_3_mentions:
         f.write("%s\n" % item)
