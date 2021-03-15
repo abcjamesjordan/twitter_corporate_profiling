@@ -64,11 +64,11 @@ tweets_mention_2 = tweets_scrape(top_3_mentions[1])
 tweets_mention_3 = tweets_scrape(top_3_mentions[2])
 
 # 3. Return that data into new variables
-tweets_mention_1.to_pickle('./tweets_mention1_df.pkl')
-tweets_mention_2.to_pickle('./tweets_mention2_df.pkl')
-tweets_mention_3.to_pickle('./tweets_mention3_df.pkl')
+tweets_mention_1.to_pickle('./data/tweets_mention1_df.pkl')
+tweets_mention_2.to_pickle('./data/tweets_mention2_df.pkl')
+tweets_mention_3.to_pickle('./data/tweets_mention3_df.pkl')
 
-with open('top_3_mentions.txt', 'w') as f:
+with open('data/top_3_mentions.txt', 'w') as f:
     for item in top_3_mentions:
         f.write("%s\n" % item)
         

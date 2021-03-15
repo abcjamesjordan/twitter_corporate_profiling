@@ -1,8 +1,0 @@
-docker cp 5631a7e226fe:/root/twint/tweets_df.pkl C:\Users\abcja\Documents\GitHub\twitter_corporate_profiling\
-docker cp 5631a7e226fe:/root/twint/user_df.pkl C:\Users\abcja\Documents\GitHub\twitter_corporate_profiling\
-
-docker cp 5631a7e226fe:/root/twint/tweets_mention1_df.pkl C:\Users\abcja\Documents\GitHub\twitter_corporate_profiling\
-docker cp 5631a7e226fe:/root/twint/tweets_mention2_df.pkl C:\Users\abcja\Documents\GitHub\twitter_corporate_profiling\
-docker cp 5631a7e226fe:/root/twint/tweets_mention3_df.pkl C:\Users\abcja\Documents\GitHub\twitter_corporate_profiling\
-
-docker cp 5631a7e226fe:/root/twint/top_3_mentions.txt C:\Users\abcja\Documents\GitHub\twitter_corporate_profiling\
