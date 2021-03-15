@@ -39,32 +39,30 @@ def get_tweets_by(df, unit_of_time):
     Returns number of tweets by day, hour, dayofweek, week, month, or year.
     '''
     if unit_of_time == 'day':
-        per_day = pd.to_datetime(df['date']).dt.date.value_counts().sort_index().reset_index()
-        per_day.columns = ['DATE','count']
+        per_day = df.groupby([df['date'].dt.date]).sum().loc[:, ['one', 'engagements']].reset_index().rename(columns={'one': 'total_tweets'})
+        per_day['type'] = df['type'].iloc[0]
+        per_day['month'] = pd.to_datetime(per_day['date']).dt.month_name()
+        per_day['year'] = pd.to_datetime(per_day['date']).dt.year
         return per_day
     elif unit_of_time == 'hour':
-        per_hour = pd.to_datetime(df['date']).dt.hour.value_counts().sort_index().reset_index()
-        per_hour.columns = ['HOUR', 'count']
+        per_hour = df.groupby([df['date'].dt.hour]).sum().loc[:, ['one', 'engagements']].reset_index().rename(columns={'one': 'total_tweets'})
+        per_hour['type'] = df['type'].iloc[0]
         return per_hour
     elif unit_of_time == 'dayofweek':
-        per_week_day = pd.to_datetime(df['date']).dt.day_name().value_counts().sort_index().reindex(DAYS_OF_WEEK).reset_index()
-        per_week_day.columns = ['WEEKDAY', 'count']
-        per_week_day.fillna({'count':0}, inplace=True)
-        per_week_day['count'] = per_week_day['count'].astype('int')
+        per_week_day = df.groupby([df['date'].dt.day_name()]).sum().loc[:, ['one', 'engagements']].reset_index().rename(columns={'one': 'total_tweets'})
+        per_week_day['type'] = df['type'].iloc[0]
         return per_week_day
     elif unit_of_time == 'week':
-        per_week = pd.to_datetime(df['date']).dt.isocalendar().week.value_counts().sort_index().reset_index()
-        per_week.columns = ['WEEK', 'count']
+        per_week = df.groupby([df['date'].dt.isocalendar().week]).sum().loc[:, ['one', 'engagements']].reset_index().rename(columns={'one': 'total_tweets'})
+        per_week['type'] = df['type'].iloc[0]
         return per_week
     elif unit_of_time == 'month':
-        per_month = pd.to_datetime(df['date']).dt.month_name().value_counts().sort_index().reindex(MONTHS_OF_YEAR).reset_index()
-        per_month.columns = ['MONTH', 'count']
-        per_month.fillna({'count':0}, inplace=True)
-        per_month['count'] = per_month['count'].astype('int')
+        per_month = df.groupby([df['date'].dt.month_name()]).sum().loc[:, ['one', 'engagements']].reset_index().rename(columns={'one': 'total_tweets'})
+        per_month['type'] = df['type'].iloc[0]
         return per_month
     elif unit_of_time == 'year':
-        per_year = pd.to_datetime(df['date']).dt.year.value_counts().sort_index().reset_index()
-        per_year.columns = ['YEAR', 'count']
+        per_year = df.groupby([df['date'].dt.year]).sum().loc[:, ['one', 'engagements']].reset_index().rename(columns={'one': 'total_tweets'})
+        per_year['type'] = df['type'].iloc[0]
         return per_year
     else:
         print('please choose either day, hour, dayofweek, month, or year')
@@ -115,6 +113,10 @@ def organize_df(df):
     
     # Add counter column
     df['count'] = df.index + 1
+    df['one'] = 1
+    
+    # Add engagements column
+    df['engagements'] = df.loc[:, ['nlikes', 'nreplies', 'nretweets']].sum(axis=1)
     
     return df, sum_mentions, sum_hashtags
 
@@ -168,7 +170,6 @@ df_mention2['type'] = '@'+top_3_mentions[1]
 df_mention3, sum_mentions3, sum_hashtags2 = organize_df(df_mention3)
 df_mention3['type'] = '@'+top_3_mentions[2]
 
-
 # # Create various dataframes for plotting analysis
 tweets_per_day, tweets_per_hour, tweets_per_dayofweek, tweets_per_week, tweets_per_month, tweets_per_year = create_per_df(df)
 tweets_per_day1, tweets_per_hour1, tweets_per_dayofweek1, tweets_per_week1, tweets_per_month1, tweets_per_year1 = create_per_df(df_mention1)
@@ -177,29 +178,92 @@ tweets_per_day3, tweets_per_hour3, tweets_per_dayofweek3, tweets_per_week3, twee
 
 # Master dataframes for plotting
 df_master = pd.concat([df, df_mention1, df_mention2, df_mention3]).reset_index(drop=True)
+df_master_per_day = pd.concat([tweets_per_day, tweets_per_day1, tweets_per_day2, tweets_per_day3]).reset_index(drop=True)
+df_master_per_hour = pd.concat([tweets_per_hour, tweets_per_hour1, tweets_per_hour2, tweets_per_hour3]).reset_index(drop=True)
+df_master_per_dayofweek = pd.concat([tweets_per_dayofweek, tweets_per_dayofweek1, tweets_per_dayofweek2, tweets_per_dayofweek3]).reset_index(drop=True)
+df_master_per_month = pd.concat([tweets_per_month, tweets_per_month1, tweets_per_month2, tweets_per_month3]).reset_index(drop=True)
+df_master_per_year = pd.concat([tweets_per_year, tweets_per_year1, tweets_per_year2, tweets_per_year3]).reset_index(drop=True)
+
 
 ### Plotting section
+###
 # Tweets over time
 # sns.set_context('poster')
 # sns.relplot(data=df_master, x='date', y='count', kind='line', hue='type', height=10, aspect=1.5, legend=True)
-# plt.title('Total Tweets vs Top 3 Mentions')
+# plt.title('Total Tweets vs Top 3 Mentions', fontsize=18)
 # plt.xlabel('Time')
 # plt.ylabel('# of Tweets')
 # plt.show()
 
-# Wordclouds
-# Mentions
-mentions_dict = sum_mentions.to_dict()
-wordcloud = WordCloud(width=1600, height=800).generate_from_frequencies(mentions_dict)
+###
+# # Engagments vs Number of Tweets
+# sns.relplot(data=tweets_per_day, x='date', y='engagements', size='total_tweets', sizes=(10, 1000), kind='scatter', height=10, aspect=1.5)
+# plt.title('Engagments vs Number of Tweets per day', fontsize=18)
+# plt.xlabel('Tweets per day')
+# plt.ylabel('# of engagements')
+# plt.show()
 
-plt.figure(figsize = (20,10), dpi=600, facecolor='k')
-plt.imshow(wordcloud, interpolation='bilinear')
-plt.axis('off')
-plt.tight_layout(pad=0)
+###
+# Tweets by weekday
+# sns.catplot(data=df_master_per_dayofweek, x='date', y='total_tweets', kind='point', hue = 'type', legend=True, height=10, aspect=1.5, order=DAYS_OF_WEEK)
+# plt.title('Tweets By Weekday', fontsize=18)
+# plt.xlabel('Day of week')
+# plt.ylabel('# of tweets')
+# plt.show()
+
+# Tweets by month
+# fig = plt.figure(figsize=(16, 8))
+# sns.barplot(data=tweets_per_month, x='date', y='total_tweets', order=MONTHS_OF_YEAR)
+# plt.title('Tweets By Month')
+# plt.xlabel('Month')
+# plt.ylabel('# of tweets')
+# plt.show()
+
+####
+# Tweets by month per day averages
+# fig = plt.figure(figsize=(16, 8))
+# sns.barplot(data=tweets_per_day, x='month', y='total_tweets', order=MONTHS_OF_YEAR)
+# plt.title('Tweets Per Day Each Month', fontsize=18)
+# plt.xlabel('Month')
+# plt.ylabel('# of tweets per day')
+# plt.show()
+
+#####
+# Tweets by year per day averages
+# fig = plt.figure(figsize=(16, 8))
+# sns.barplot(data=tweets_per_day, x='year', y='total_tweets')
+# plt.title('Tweets Per Day Each Year', fontsize=18)
+# plt.xlabel('Year')
+# plt.ylabel('# of tweets per day')
+# plt.show()
+
+# Engagements over time
+sns.relplot(data=df, x='date', y='engagements', kind='scatter', height=10, aspect=1.5, legend=True)
+plt.title('Engagements vs Top 3 Mentions')
+plt.xlabel('Time')
+plt.ylabel('Engagements')
 plt.show()
 
-# Hashtags
+# # Wordclouds
+# # Mentions
+# mentions_dict = sum_mentions.to_dict()
+# wordcloud = WordCloud(width=1600, height=800).generate_from_frequencies(mentions_dict)
 
+# plt.figure(figsize = (20,10), dpi=600, facecolor='k')
+# plt.imshow(wordcloud, interpolation='bilinear')
+# plt.axis('off')
+# plt.tight_layout(pad=0)
+# plt.show()
+
+# # Hashtags
+# hashtags_dict = sum_hashtags.to_dict()
+# wordcloud = WordCloud(width=1600, height=800).generate_from_frequencies(hashtags_dict)
+
+# plt.figure(figsize = (20,10), dpi=600, facecolor='k')
+# plt.imshow(wordcloud, interpolation='bilinear')
+# plt.axis('off')
+# plt.tight_layout(pad=0)
+# plt.show()
 
 
 

@@ -38,9 +38,9 @@ def profile_lookup(username, pandas_bool=True, hide_output_bool=True):
     return user_df
 
 # Get the original company twitter data
-df_tweets = tweets_scrape('SPGlobalPlatts')
+df_tweets = tweets_scrape('veevasystems')
 df_tweets.to_pickle('./tweets_df.pkl')
-df_user = profile_lookup('SPGlobalPlatts')
+df_user = profile_lookup('veevasystems')
 
 
 # 1. Find top 3 mentions within those tweets
@@ -71,3 +71,5 @@ tweets_mention_3.to_pickle('./tweets_mention3_df.pkl')
 with open('top_3_mentions.txt', 'w') as f:
     for item in top_3_mentions:
         f.write("%s\n" % item)
+        
+print('All done!')
