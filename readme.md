@@ -1,3 +1,5 @@
+![alt text](https://github.com/abcjamesjordan/twitter_corporate_profiling/blob/main/pdf_preview.png?raw=true)
+
 # Twitter Analysis
 
 This project is aimed developing code to scrape, analyize, and visualize tweets for corporate accounts(companies).
