@@ -120,3 +120,6 @@ dmypy.json
 .pyre/
 *.pdf
 *.pdf
+
+# Ignore text files
+*.txt

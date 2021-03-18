@@ -1,9 +1,0 @@
-docker cp /Users/jamesjordan/Documents/GitHub/twitter_corporate_profiling/get_data.py 8a58aabf8719:/root/twint/get_data.py
-docker cp /Users/jamesjordan/Documents/GitHub/twitter_corporate_profiling/organize_data.py 8a58aabf8719:/root/twint/organize_data.py
-docker cp /Users/jamesjordan/Documents/GitHub/twitter_corporate_profiling/create_pdf.py 8a58aabf8719:/root/twint/create_pdf.py
-
-docker cp /Users/jamesjordan/Documents/GitHub/twitter_corporate_profiling/requirements.txt 8a58aabf8719:/root/twint/requirements.txt
-
-docker cp /Users/jamesjordan/Documents/GitHub/twitter_corporate_profiling/header_image.png 8a58aabf8719:/root/twint/header_image.png
-
-docker cp 8a58aabf8719:/root/twint/current_twitter_analysis.pdf /Users/jamesjordan/Documents/GitHub/twitter_corporate_profiling/
