@@ -123,3 +123,6 @@ dmypy.json
 
 # Ignore text files
 *.txt
+
+# Vscode
+./.vscode
