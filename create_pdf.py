@@ -3,6 +3,7 @@ from fpdf import FPDF
 
 WIDTH = 210
 HEIGHT = 297
+current_company = 'CareDash'
 
 def create_title(day, company, pdf):
     pdf.set_font('Arial', 'B', 24)
@@ -14,7 +15,7 @@ def create_title(day, company, pdf):
     pdf.ln(5)
     
 
-def create_pdf(day, company, filename='twitter_analysis.pdf'):
+def create_pdf(day, company, filename='current_twitter_analysis.pdf'):
     pdf = FPDF()
     ''' PAGE 1 '''
     pdf.add_page()
@@ -74,11 +75,10 @@ def create_pdf(day, company, filename='twitter_analysis.pdf'):
     # pdf.multi_cell(WIDTH-15, 5, conclusion, align='L')
     
     
-    pdf.output('twitter_analysis.pdf', 'F')
+    pdf.output('current_twitter_analysis.pdf', 'F')
     
     return
 
 now = datetime.today().strftime('%m/%d/%Y')
-current_company = 'Veeva'
 
 create_pdf(now, current_company)

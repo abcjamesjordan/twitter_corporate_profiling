@@ -11,7 +11,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 # Constants
 DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 MONTHS_OF_YEAR = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-COMPANY = 'veevasystems'
+COMPANY = 'caredash'
 
 # Regex variables
 twitter_handle_regex = r'@([a-zA-Z0-9_]+)'

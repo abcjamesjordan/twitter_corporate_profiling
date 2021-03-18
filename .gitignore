@@ -1,3 +1,9 @@
+# Custom ignores
+.pdf
+# Directories
+helper_files/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -112,6 +118,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
-# Directories
-helper_files/

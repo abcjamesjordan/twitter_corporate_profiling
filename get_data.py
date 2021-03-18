@@ -32,14 +32,14 @@ def profile_lookup(username, pandas_bool=True, hide_output_bool=True):
     twint.run.Lookup(c)
     
     user_df = twint.storage.panda.User_df
-    user_df.to_pickle('./user_df.pkl')
+    user_df.to_pickle('./data/user_df.pkl')
     
     return user_df
 
 # Get the original company twitter data
-df_tweets = tweets_scrape('veevasystems')
-df_tweets.to_pickle('./tweets_df.pkl')
-df_user = profile_lookup('veevasystems')
+df_tweets = tweets_scrape('caredash')
+df_tweets.to_pickle('./data/tweets_df.pkl')
+df_user = profile_lookup('caredash')
 
 
 # 1. Find top 3 mentions within those tweets
