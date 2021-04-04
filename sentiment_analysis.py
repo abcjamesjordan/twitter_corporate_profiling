@@ -16,7 +16,8 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 from nltk.corpus import stopwords
 
-# from textblob import TextBlob
+from textblob import TextBlob
+
 # from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 
@@ -32,7 +33,7 @@ train_spacy = train_spacy.sample(frac=1, random_state=42).reset_index(drop=True)
 test = pd.read_pickle(path_test)
 test = test['tweet']
 
-NUM_SAMPLES = 100
+
 NUM_NEG = len(train[train['label'] == -1])
 NUM_SAMPLES = len(train)
 TEST_SIZE = 0.2
@@ -104,7 +105,7 @@ def clean_text(df, column):
 df_bow = clean_text(df_bow, 'text')
 
 # Split data
-def balance_data(df, cuttoff_length=1000):
+def balance_data(df, cuttoff_length=100):
     num_pos = len(df[df['label'] == 1])
     num_neg = len(df[df['label'] == -1])
     num_neu = len(df[df['label'] == 0])
@@ -124,7 +125,7 @@ def split_data(df):
 df_bow_train = balance_data(df_bow)
 
 # BOW SVC
-df_train, df_val = split_data(df_bow_train, TEST_SIZE)
+df_train, df_val = split_data(df_bow_train)
 
 X_train = df_train['text'].values
 X_val = df_val['text'].values
@@ -143,24 +144,24 @@ print("BOW SVC Training accuracy Score  : ",clf.score(X_train_vectors,y_train))
 print("BOW SVC Validation accuracy Score: ",clf_accuracy)
 print(classification_report(y_val, clf_prediction))
 
-# # SVC prediction using Textblob
-# df_bow_train['polarity'] = [TextBlob(x).sentiment.polarity for x in df_bow_train['text']]
-# df_bow_train['subjectivity'] = [TextBlob(x).sentiment.subjectivity for x in df_bow_train['text']]
-# df_bow_train = df_bow_train.drop(columns=['text'])
-# df_train, df_val = split_data(df_bow_train, TEST_SIZE)
+# SVC prediction using Textblob
+df_bow_train['polarity'] = [TextBlob(x).sentiment.polarity for x in df_bow_train['text']]
+df_bow_train['subjectivity'] = [TextBlob(x).sentiment.subjectivity for x in df_bow_train['text']]
+df_bow_train = df_bow_train.drop(columns=['text'])
+df_train, df_val = split_data(df_bow_train)
 
-# X_train = df_train['text'].values
-# X_val = df_val['text'].values
-# y_train = df_train['label'].values
-# y_val = df_val['label'].values
+X_train = df_train[['polarity', 'subjectivity']].values
+X_val = df_val[['polarity', 'subjectivity']].values
+y_train = df_train['label'].values
+y_val = df_val['label'].values
 
-# svc_txt = SVC()
-# svc_txt.fit(X_train, y_train)
-# svc_txt_prediction = svc_txt.predict(X_val)
-# svc_txt_accuracy = accuracy_score(y_val, svc_txt_prediction)
-# print("Textblob SVC Training accuracy Score  : ",svc_txt.score(X_train,y_train))
-# print("Textblob SVC Validation accuracy Score: ",svc_txt_accuracy)
-# print(classification_report(y_val, svc_txt_prediction))
+svc_txt = SVC()
+svc_txt.fit(X_train, y_train)
+svc_txt_prediction = svc_txt.predict(X_val)
+svc_txt_accuracy = accuracy_score(y_val, svc_txt_prediction)
+print("Textblob SVC Training accuracy Score  : ",svc_txt.score(X_train,y_train))
+print("Textblob SVC Validation accuracy Score: ",svc_txt_accuracy)
+print(classification_report(y_val, svc_txt_prediction))
 
 
 
