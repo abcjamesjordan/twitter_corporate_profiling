@@ -32,9 +32,10 @@ train_spacy = train_spacy.sample(frac=1, random_state=42).reset_index(drop=True)
 test = pd.read_pickle(path_test)
 test = test['tweet']
 
-NUM_SAMPLES = 1000
+NUM_SAMPLES = 100
 NUM_NEG = len(train[train['label'] == -1])
 NUM_SAMPLES = len(train)
+TEST_SIZE = 0.2
 
 
 # Ploting for classification results
@@ -100,7 +101,6 @@ def clean_text(df, column):
     
     return df
 
-
 df_bow = clean_text(df_bow, 'text')
 
 # Split data
@@ -118,12 +118,13 @@ def balance_data(df, cuttoff_length=1000):
 
 def split_data(df):
     stratify = df['label']
-    train, val = train_test_split(df, test_size=0.2, random_state=42, stratify=stratify)
+    train, val = train_test_split(df, test_size=0.1, random_state=42, stratify=stratify)
     return train, val
 
-df_bow_train = balance_data(df_bow, cuttoff_length=NUM_NEG)
+df_bow_train = balance_data(df_bow)
 
-df_train, df_val = split_data(df_bow_train)
+# BOW SVC
+df_train, df_val = split_data(df_bow_train, TEST_SIZE)
 
 X_train = df_train['text'].values
 X_val = df_val['text'].values
@@ -134,7 +135,6 @@ vectorizer = CountVectorizer()
 X_train_vectors = vectorizer.fit_transform(X_train)
 X_val_vectors = vectorizer.transform(X_val)
 
-# SVC prediction using BOW
 clf = SVC()
 clf.fit(X_train_vectors, y_train)
 clf_prediction = clf.predict(X_val_vectors)
@@ -143,6 +143,30 @@ print("BOW SVC Training accuracy Score  : ",clf.score(X_train_vectors,y_train))
 print("BOW SVC Validation accuracy Score: ",clf_accuracy)
 print(classification_report(y_val, clf_prediction))
 
+# # SVC prediction using Textblob
+# df_bow_train['polarity'] = [TextBlob(x).sentiment.polarity for x in df_bow_train['text']]
+# df_bow_train['subjectivity'] = [TextBlob(x).sentiment.subjectivity for x in df_bow_train['text']]
+# df_bow_train = df_bow_train.drop(columns=['text'])
+# df_train, df_val = split_data(df_bow_train, TEST_SIZE)
+
+# X_train = df_train['text'].values
+# X_val = df_val['text'].values
+# y_train = df_train['label'].values
+# y_val = df_val['label'].values
+
+# svc_txt = SVC()
+# svc_txt.fit(X_train, y_train)
+# svc_txt_prediction = svc_txt.predict(X_val)
+# svc_txt_accuracy = accuracy_score(y_val, svc_txt_prediction)
+# print("Textblob SVC Training accuracy Score  : ",svc_txt.score(X_train,y_train))
+# print("Textblob SVC Validation accuracy Score: ",svc_txt_accuracy)
+# print(classification_report(y_val, svc_txt_prediction))
+
+
+
+
+
+'''
 # Spacy Analysis
 df_bow_spacy = train_spacy.copy()
 df_bow_train_spacy = balance_data(df_bow_spacy, cuttoff_length=NUM_NEG)
@@ -164,7 +188,7 @@ svc_spacy_accuracy = accuracy_score(y_val_spacy, svc_spacy_prediction)
 print("Spacy BOW SVC Training accuracy Score  : ",svc_spacy.score(X_train_vectors_spacy,y_train_spacy))
 print("Spacy BOW SVC Validation accuracy Score: ",svc_spacy_accuracy)
 print(classification_report(y_val_spacy, svc_spacy_prediction))
-
+'''
 
 
 
