@@ -5,7 +5,7 @@ import os
 def scrape_tweets(keyword):
     c = twint.Config()
     c.Search = str(keyword)
-    c.Limit = 500
+    c.Limit = 10000
     c.Pandas = True
     c.Hide_output = True
     
@@ -35,9 +35,9 @@ path_petro = os.path.join(path, 'data', 'petro.pkl')
 
 # Save pickles of dataframes
 df_coal.to_pickle(path_coal)
-df_coal.to_pickle(path_solar)
-df_coal.to_pickle(path_wind)
-df_coal.to_pickle(path_gas)
-df_coal.to_pickle(path_petro)
+df_solar.to_pickle(path_solar)
+df_wind.to_pickle(path_wind)
+df_gas.to_pickle(path_gas)
+df_petro.to_pickle(path_petro)
 
 print('All done!')

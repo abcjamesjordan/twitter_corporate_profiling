@@ -2,24 +2,20 @@ import numpy as np
 import pandas as pd
 import os
 import re
+import pickle
 
-from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import make_scorer, accuracy_score, classification_report, f1_score
-from sklearn.decomposition import PCA as sklearnPCA
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-
-from nltk.corpus import stopwords
+from sklearn.metrics import make_scorer, accuracy_score, classification_report, f1_score, confusion_matrix
+from sklearn.feature_extraction.text import CountVectorizer
 
 from textblob import TextBlob
 
+# from matplotlib.colors import ListedColormap
 # from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-
 
 # Import data
 path = os.getcwd()
@@ -33,79 +29,29 @@ train_spacy = train_spacy.sample(frac=1, random_state=42).reset_index(drop=True)
 test = pd.read_pickle(path_test)
 test = test['tweet']
 
-
-NUM_NEG = len(train[train['label'] == -1])
-NUM_SAMPLES = len(train)
-TEST_SIZE = 0.2
-
-
-# Ploting for classification results
-cmap_light = ListedColormap(['orange', 'cyan', 'cornflowerblue'])
-cmap_bold = ['darkorange', 'c', 'darkblue']
-h=0.02
-def plot_results(X_train, X_valid, model, hue_train, hue_valid):
-    x_min, x_max = X_train[:, 0].min(), X_train[:, 0].max()
-    y_min, y_max = X_train[:, 1].min(), X_train[:, 1].max()
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-    Z = Z.reshape(xx.shape)
-    plt.figure(figsize=(10, 6))
-    plt.contourf(xx, yy, Z, cmap=cmap_light)
-    sns.scatterplot(x=X_train[:, 0], y=X_train[:, 1], hue=hue_train, palette=cmap_bold, alpha=1.0, edgecolor="black")
-    plt.xlim(xx.min(), xx.max())
-    plt.ylim(yy.min(), yy.max())
-    
-    x_min, x_max = X_valid[:, 0].min(), X_valid[:, 0].max()
-    y_min, y_max = X_valid[:, 1].min(), X_valid[:, 1].max()
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
-    Z = Z.reshape(xx.shape)
-    plt.figure(figsize=(10, 6))
-    plt.contourf(xx, yy, Z, cmap=cmap_light)
-    sns.scatterplot(x=X_valid[:, 0], y=X_valid[:, 1], hue=hue_valid, palette=cmap_bold, alpha=1.0, edgecolor="black")
-    plt.xlim(xx.min(), xx.max())
-    plt.ylim(yy.min(), yy.max())
-    return
-
-# Bag of words
-df_bow = train.copy()
-
-# Regex for pattern matching
-unicode_regex_1 = r'(\\u[0-9A-Fa-f]+)'
-unicode_regex_2 = r'[^\x00-\x7f]'
-url_regex = r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})'
-multiexclamation_regex = r'(\!)\1+'
-multiquestion_regex = r'(\?)\1+'
-multistop_regex = r'(\.)\1+'
-twitter_handle_regex = r'@([a-zA-Z0-9_]+)'
-hashtag_regex = r'#([^\s]+)'
+# Constants
+num_neg = len(train[train['label'] == -1])
+num_samples = len(train)
 
 # Pre-processing
 def clean_text(df, column):
+    # Regex for pattern matching
+    unicode_regex_1 = r'(\\u[0-9A-Fa-f]+)'
+    unicode_regex_2 = r'[^\x00-\x7f]'
+    url_regex = r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})'
     # Unicode
     df[column] = df[column].str.replace(unicode_regex_1, r' ', regex=True)
     df[column] = df[column].str.replace(unicode_regex_2, r' ', regex=True)
-    
     # Urls
     df[column] = df[column].str.replace(url_regex, 'url', regex=True)
     
-    # # Multi-punctuation
-    # df[column] = df[column].str.replace(multiexclamation_regex, ' multiExclamation ', regex=True)
-    # df[column] = df[column].str.replace(multiquestion_regex, ' multiQuestion ', regex=True)
-    # df[column] = df[column].str.replace(multistop_regex, ' multiStop ', regex=True)
-    
-    # # Handles
-    # df[column] = df[column].str.replace(twitter_handle_regex, ' ', regex=True)
-    
-    # # Hashtags
-    # df[column] = df[column].str.replace(hashtag_regex, ' ', regex=True)
-    
     return df
 
+df_bow = train.copy()
 df_bow = clean_text(df_bow, 'text')
 
 # Split data
-def balance_data(df, cuttoff_length=100):
+def balance_data(df, cuttoff_length=num_neg):
     num_pos = len(df[df['label'] == 1])
     num_neg = len(df[df['label'] == -1])
     num_neu = len(df[df['label'] == 0])
@@ -124,9 +70,28 @@ def split_data(df):
 
 df_bow_train = balance_data(df_bow)
 
+# SVC prediction using Textblob
+df_bow_train_blob = df_bow_train.copy()
+df_bow_train_blob['polarity'] = [TextBlob(x).sentiment.polarity for x in df_bow_train_blob['text']]
+df_bow_train_blob['subjectivity'] = [TextBlob(x).sentiment.subjectivity for x in df_bow_train_blob['text']]
+df_bow_train_blob = df_bow_train_blob.drop(columns=['text'])
+df_train, df_val = split_data(df_bow_train_blob)
+
+X_train = df_train[['polarity', 'subjectivity']].values
+X_val = df_val[['polarity', 'subjectivity']].values
+y_train = df_train['label'].values
+y_val = df_val['label'].values
+
+svc_txt = SVC()
+svc_txt.fit(X_train, y_train)
+svc_txt_prediction = svc_txt.predict(X_val)
+svc_txt_accuracy = accuracy_score(y_val, svc_txt_prediction)
+print("Textblob SVC Training accuracy Score  : ",svc_txt.score(X_train,y_train))
+print("Textblob SVC Validation accuracy Score: ",svc_txt_accuracy)
+print(classification_report(y_val, svc_txt_prediction))
+
 # BOW SVC
 df_train, df_val = split_data(df_bow_train)
-
 X_train = df_train['text'].values
 X_val = df_val['text'].values
 y_train = df_train['label'].values
@@ -144,33 +109,84 @@ print("BOW SVC Training accuracy Score  : ",clf.score(X_train_vectors,y_train))
 print("BOW SVC Validation accuracy Score: ",clf_accuracy)
 print(classification_report(y_val, clf_prediction))
 
-# SVC prediction using Textblob
-df_bow_train['polarity'] = [TextBlob(x).sentiment.polarity for x in df_bow_train['text']]
-df_bow_train['subjectivity'] = [TextBlob(x).sentiment.subjectivity for x in df_bow_train['text']]
-df_bow_train = df_bow_train.drop(columns=['text'])
-df_train, df_val = split_data(df_bow_train)
+path_pickle_model = os.path.join(path, 'models', 'sentiment_classifier.pkl')
+with open(path_pickle_model, 'wb') as f:
+    pickle.dump(clf, f)
 
-X_train = df_train[['polarity', 'subjectivity']].values
-X_val = df_val[['polarity', 'subjectivity']].values
-y_train = df_train['label'].values
-y_val = df_val['label'].values
+path_pickle_vectorizer = os.path.join(path, 'models', 'vectorizer.pkl')
+with open(path_pickle_vectorizer, 'wb') as f:
+    pickle.dump(vectorizer, f)
 
-svc_txt = SVC()
-svc_txt.fit(X_train, y_train)
-svc_txt_prediction = svc_txt.predict(X_val)
-svc_txt_accuracy = accuracy_score(y_val, svc_txt_prediction)
-print("Textblob SVC Training accuracy Score  : ",svc_txt.score(X_train,y_train))
-print("Textblob SVC Validation accuracy Score: ",svc_txt_accuracy)
-print(classification_report(y_val, svc_txt_prediction))
+# Confusion Matrix
+labels = ['Neg', 'Neu', 'Pos']
+
+cm = confusion_matrix(y_val, clf_prediction)
+df_cm = pd.DataFrame(cm, columns=labels)
+df_cm = df_cm.rename(index={0: 'Neg', 1: 'Neu', 2: 'Pos'})
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(df_cm, annot=True, fmt='d')
+path_cm = os.path.join(path, 'images', 'confustion_matrix.png')
+plt.title('Confustion Matrix - SVC Box of Words')
+plt.savefig(path_cm, bbox_inches='tight')
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # Ploting for classification results
+# cmap_light = ListedColormap(['orange', 'cyan', 'cornflowerblue'])
+# cmap_bold = ['darkorange', 'c', 'darkblue']
+# h=0.02
+# def plot_results(X_train, X_valid, model, hue_train, hue_valid):
+#     x_min, x_max = X_train[:, 0].min(), X_train[:, 0].max()
+#     y_min, y_max = X_train[:, 1].min(), X_train[:, 1].max()
+#     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+#     Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+#     Z = Z.reshape(xx.shape)
+#     plt.figure(figsize=(10, 6))
+#     plt.contourf(xx, yy, Z, cmap=cmap_light)
+#     sns.scatterplot(x=X_train[:, 0], y=X_train[:, 1], hue=hue_train, palette=cmap_bold, alpha=1.0, edgecolor="black")
+#     plt.xlim(xx.min(), xx.max())
+#     plt.ylim(yy.min(), yy.max())
+    
+#     x_min, x_max = X_valid[:, 0].min(), X_valid[:, 0].max()
+#     y_min, y_max = X_valid[:, 1].min(), X_valid[:, 1].max()
+#     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+#     Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+#     Z = Z.reshape(xx.shape)
+#     plt.figure(figsize=(10, 6))
+#     plt.contourf(xx, yy, Z, cmap=cmap_light)
+#     sns.scatterplot(x=X_valid[:, 0], y=X_valid[:, 1], hue=hue_valid, palette=cmap_bold, alpha=1.0, edgecolor="black")
+#     plt.xlim(xx.min(), xx.max())
+#     plt.ylim(yy.min(), yy.max())
+#     return
 
 
 '''
 # Spacy Analysis
 df_bow_spacy = train_spacy.copy()
-df_bow_train_spacy = balance_data(df_bow_spacy, cuttoff_length=NUM_NEG)
+df_bow_train_spacy = balance_data(df_bow_spacy, cuttoff_length=num_neg)
 df_train_spacy, df_val_spacy = split_data(df_bow_train_spacy)
 
 X_train_spacy = df_train_spacy['text'].values
